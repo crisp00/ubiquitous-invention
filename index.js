@@ -1,86 +1,104 @@
 'use strict';
 var libQ = require('kew');
-module.exports = ExamplePlugin;
+var net = require('net');
+var fs = require('fs');
+var socketPath = '/home/volumio/raat/cross/vrst_daemon.sock';
 
-function ExamplePlugin(context) {
+module.exports = VolumioRaat;
+
+function VolumioRaat(context) {
   var self = this;
   self.context = context;
   self.commandRouter = this.context.coreCommand;
+  self.vrst = [];
+  self.client = net.createConnection(socketPath);
+
+  self.client.on("connect", function() {
+    self.client.write("ping\n");
+    self.commandRouter.pushToastMessage('info', "RAAT", "Connected to VRST");
+  });
+
+  self.client.on("data", function(data) {
+    self.commandRouter.pushToastMessage('info', "Data from VRST", data.toString());
+  });
+
+  self.client.on("drain", function(){
+    if(self.vrst.length > 0){
+      self.client.write(self.vrst.shift());
+    }
+  });
+
 }
 
-
-/*
- * This method can be defined by every plugin which needs to be informed of the startup of Volumio.
- * The Core controller checks if the method is defined and executes it on startup if it exists.
- */
-ExamplePlugin.prototype.onVolumioStart = function () {
+VolumioRaat.prototype.onVolumioStart = function () {
   var self = this;
   //Perform startup tasks here
   setTimeout(()=>{
     self.commandRouter.pushToastMessage('info', "RAAT", "Plugin loaded!");
-  }, 5000);
+  }, 2000);
   return libQ.resolve();
 };
 
-ExamplePlugin.prototype.onStop = function () {
+VolumioRaat.prototype.onStop = function () {
   var self = this;
+  self.client.end();
   //Perform stop tasks here
   return libQ.resolve();
 };
 
-ExamplePlugin.prototype.onRestart = function () {
+VolumioRaat.prototype.onRestart = function () {
   var self = this;
   //Perform restart tasks here
 };
 
-ExamplePlugin.prototype.onInstall = function () {
+VolumioRaat.prototype.onInstall = function () {
   var self = this;
   //Perform your installation tasks here
 };
 
-ExamplePlugin.prototype.onUninstall = function () {
+VolumioRaat.prototype.onUninstall = function () {
   var self = this;
   //Perform your deinstallation tasks here
 };
 
-ExamplePlugin.prototype.getUIConfig = function () {
+VolumioRaat.prototype.getUIConfig = function () {
   var self = this;
 
   return {success: true, plugin: "example_plugin"};
 };
 
-ExamplePlugin.prototype.setUIConfig = function (data) {
+VolumioRaat.prototype.setUIConfig = function (data) {
   var self = this;
   //Perform your UI configuration tasks here
 };
 
-ExamplePlugin.prototype.getConf = function (varName) {
+VolumioRaat.prototype.getConf = function (varName) {
   var self = this;
   //Perform your tasks to fetch config data here
 };
 
-ExamplePlugin.prototype.setConf = function (varName, varValue) {
+VolumioRaat.prototype.setConf = function (varName, varValue) {
   var self = this;
   //Perform your tasks to set config data here
 };
 
 //Optional functions exposed for making development easier and more clear
-ExamplePlugin.prototype.getSystemConf = function (pluginName, varName) {
+VolumioRaat.prototype.getSystemConf = function (pluginName, varName) {
   var self = this;
   //Perform your tasks to fetch system config data here
 };
 
-ExamplePlugin.prototype.setSystemConf = function (pluginName, varName) {
+VolumioRaat.prototype.setSystemConf = function (pluginName, varName) {
   var self = this;
   //Perform your tasks to set system config data here
 };
 
-ExamplePlugin.prototype.getAdditionalConf = function () {
+VolumioRaat.prototype.getAdditionalConf = function () {
   var self = this;
   //Perform your tasks to fetch additional config data here
 };
 
-ExamplePlugin.prototype.setAdditionalConf = function () {
+VolumioRaat.prototype.setAdditionalConf = function () {
   var self = this;
   //Perform your tasks to set additional config data here
 };
