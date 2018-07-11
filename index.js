@@ -2,7 +2,10 @@
 var libQ = require('kew');
 var net = require('net');
 var fs = require('fs');
+var vlib = require('./vrstlib.js');
 var socketPath = '/home/volumio/raat/cross/vrst_daemon.sock';
+
+//VRCP: Volumio RAAT Client Plugin
 
 module.exports = VolumioRaat;
 
@@ -10,24 +13,24 @@ function VolumioRaat(context) {
   var self = this;
   self.context = context;
   self.commandRouter = this.context.coreCommand;
-  self.vrst = [];
   self.client = net.createConnection(socketPath);
 
   self.client.on("connect", function() {
-    self.client.write("ping\n");
-    self.commandRouter.pushToastMessage('info', "RAAT", "Connected to VRST");
+    console.log("       [VRCP] connected to VRST");
+    setTimeout(()=>{
+      self.commandRouter.pushToastMessage('info', "VRCP", "sending PING");
+      self.client.write(vlib.cmd_ping.get());
+    }, 3000);
   });
 
   self.client.on("data", function(data) {
-    self.commandRouter.pushToastMessage('info', "Data from VRST", data.toString());
-  });
-
-  self.client.on("drain", function(){
-    if(self.vrst.length > 0){
-      self.client.write(self.vrst.shift());
+    var cmd = vlib.cmd.fromBuffer(data);
+    switch(cmd.type){
+      case vlib.msg_type.PONG:
+        self.commandRouter.pushToastMessage('info', "VRCP", "got PONG");
+        break;
     }
   });
-
 }
 
 VolumioRaat.prototype.onVolumioStart = function () {
