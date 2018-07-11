@@ -3,8 +3,9 @@ var socketPath = '/home/volumio/raat/cross/vrst_daemon.sock';
 
 var VrstLib = {};
 
-// module.exports = VrstLib;
+module.exports = VrstLib;
 VrstLib.cmd_type = Object.freeze({
+  REQ_CONTROL:"RCTL",
   PING:"PING", 
   PONG:"PONG",
   ECHO:"ECHO",
@@ -16,7 +17,6 @@ VrstLib.cmd_type = Object.freeze({
   VOLUME_UP:"VOL+",
   VOLUME_DOWN:"VOL-",
   VOLUME_SET:"VOL=",
-  REQ_SILENCE:"RSIL",
   NONE:"NONE"
 });
 
@@ -27,8 +27,8 @@ VrstLib.cmd = function(cmd_id){
   this.bytes.set([0xAF,0xC9], 4)
   this.type = VrstLib.cmd_type.NONE;
   for(var type in VrstLib.cmd_type){
-    if(cmd_id == type){
-      this.type = type;
+    if(cmd_id == VrstLib.cmd_type[type]){
+      this.type = VrstLib.cmd_type[type];
     }
   }
 }
@@ -83,4 +83,4 @@ VrstLib.cmd_previous = new VrstLib.cmd("PREV");
 VrstLib.cmd_volume_up = new VrstLib.cmd("VOL+");
 VrstLib.cmd_volume_down = new VrstLib.cmd("VOL-");
 VrstLib.cmd_volume_set= new VrstLib.cmd_volume_set_macro();
-VrstLib.cmd_request_silence = new VrstLib.cmd("RSIL");
+VrstLib.cmd_request_control = new VrstLib.cmd("RCTL");

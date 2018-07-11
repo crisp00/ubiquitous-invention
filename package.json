@@ -9,9 +9,9 @@
   "author": "",
   "license": "ISC",
   "volumio_info": {
-    "prettyName": "Youtube Playback",
+    "prettyName": "Volumio RAAT Client Plugin",
       "plugin_type": "music_service",
-      "icon": "fa-youtube",
+      "icon": "",
       "boot_priority": 10
   },
   "dependencies": {

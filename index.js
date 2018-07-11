@@ -20,16 +20,30 @@ function VolumioRaat(context) {
     setTimeout(()=>{
       self.commandRouter.pushToastMessage('info', "VRCP", "sending PING");
       self.client.write(vlib.cmd_ping.get());
-    }, 3000);
+    }, 100);
   });
 
   self.client.on("data", function(data) {
     var cmd = vlib.cmd.fromBuffer(data);
     switch(cmd.type){
-      case vlib.msg_type.PONG:
+      case vlib.cmd_type.PONG:
         self.commandRouter.pushToastMessage('info', "VRCP", "got PONG");
+        setTimeout(()=>{
+          self.client.write(vlib.cmd_play.get());
+        }, 100);
+        break;
+      case vlib.cmd_type.REQ_CONTROL:
+        self.acquireControl();
+        break;
+      default:
+        self.commandRouter.pushToastMessage('info', "VRCP", "unrecognized message from VRST: " + cmd.type + " :: " + cmd.bytes);
+        console.log("       [VRCP] unrecognized message from VRST: " + cmd.type + " :: " + cmd.cmd_id + "\n");
         break;
     }
+  });
+
+  self.client.on("error",  () => {
+
   });
 }
 
@@ -105,3 +119,38 @@ VolumioRaat.prototype.setAdditionalConf = function () {
   var self = this;
   //Perform your tasks to set additional config data here
 };
+
+VolumioRaat.prototype.acquireControl = function () {
+  var self = this;
+  this.commandRouter.pushConsoleMessage("       [VRCP] acquiring control");
+
+  if(!this.commandRouter.stateMachine.isVolatile || this.commandRouter.stateMachine.volatileService != "raat_new"){
+    this.commandRouter.stateMachine.setConsumeUpdateService(undefined);
+    this.commandRouter.pushConsoleMessage("       [VRCP] Setting volatile " + this.commandRouter.stateMachine.isVolatile + " " + this.commandRouter.stateMachine.volatileService);
+    //We must free up the audio device for Raat
+    var promise = this.commandRouter.volumioStop().then(()=>{
+
+    //Clean the state object
+    this.obj.status='play';
+    this.obj.title="RAAT Motherfuckers!";
+    this.obj.artist="asd";
+    this.obj.album="asd";
+    this.obj.seek=32;
+    this.obj.duration=300;
+    this.obj.service = "raat_new";
+    this.obj.trackType = "rr";
+
+    //We are volatile
+    this.commandRouter.stateMachine.setVolatile({
+        service: "raat_new",
+        callback: this.giveUpControl.bind(self)
+    });
+    this.hasControl = true;
+    });
+  }
+
+}
+
+VolumioRaat.prototype.giveUpControl = function(){
+
+}
