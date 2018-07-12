@@ -3,7 +3,7 @@ var libQ = require('kew');
 var net = require('net');
 var fs = require('fs');
 var vlib = require('./vrstlib.js');
-var socketPath = '/home/volumio/raat/cross/vrst_daemon.sock';
+var socketPath = '/data/plugins/music_service/raat/vrst_daemon.sock';
 
 //VRCP: Volumio RAAT Client Plugin
 
@@ -123,34 +123,34 @@ VolumioRaat.prototype.setAdditionalConf = function () {
 VolumioRaat.prototype.acquireControl = function () {
   var self = this;
   this.commandRouter.pushConsoleMessage("       [VRCP] acquiring control");
-
-  if(!this.commandRouter.stateMachine.isVolatile || this.commandRouter.stateMachine.volatileService != "raat_new"){
-    this.commandRouter.stateMachine.setConsumeUpdateService(undefined);
-    this.commandRouter.pushConsoleMessage("       [VRCP] Setting volatile " + this.commandRouter.stateMachine.isVolatile + " " + this.commandRouter.stateMachine.volatileService);
-    //We must free up the audio device for Raat
-    var promise = this.commandRouter.volumioStop().then(()=>{
-
+  //We must free up the audio device for Raat
+  var promise = this.commandRouter.volumioStop().then(() => {
+    this.obj = {};
     //Clean the state object
-    this.obj.status='play';
-    this.obj.title="RAAT Motherfuckers!";
-    this.obj.artist="asd";
-    this.obj.album="asd";
-    this.obj.seek=32;
-    this.obj.duration=300;
-    this.obj.service = "raat_new";
+    this.obj.album="";
+    this.obj.service = "raat";
     this.obj.trackType = "rr";
+    self.obj.status = "play";
+    self.obj.artist = "Cris Pintea";
+    self.obj.title = "Up yo a";
+    self.obj.duration = 1000;
+    self.obj.seek = 250;
 
-    //We are volatile
-    this.commandRouter.stateMachine.setVolatile({
-        service: "raat_new",
-        callback: this.giveUpControl.bind(self)
+    
+    console.log("       [VRCP] going to set volatile now");
+    self.commandRouter.stateMachine.setVolatile({
+        service: "raat",
+        callback: this.sourceLost.bind(self)
     });
-    this.hasControl = true;
-    });
-  }
-
+    setTimeout(()=>{
+      self.commandRouter.servicePushState(self.obj, 'raat');
+      promise.resolve();    
+    }, 200);
+  });
+  return promise;
 }
 
 VolumioRaat.prototype.giveUpControl = function(){
-
+  var self = this;
+  self.client.write(vlib.cmd_stop.get());
 }
